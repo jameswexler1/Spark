@@ -1,19 +1,27 @@
 #!/bin/sh
 
-# Spark Auto Rice Bootstrapping Script
-# Customized by [Your Name]
+# Luke's Auto Rice Bootstrapping Script (Spark)
+# by Luke Smith <luke@lukesmith.xyz>
 # License: GNU GPLv3
 
 ### OPTIONS AND VARIABLES ###
 
 dotfilesrepo="https://github.com/jameswexler1/sparkrice.git"
-progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/main/static/progs.csv"
+progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/progs.csv"
 aurhelper="yay"
 repobranch="main"
 export TERM=ansi
 
-rssurls="https://www.archlinux.org/feeds/news/ \"tech\"
-# Add your own RSS feeds here"
+rssurls="https://lukesmith.xyz/rss.xml
+https://videos.lukesmith.xyz/feeds/videos.xml?videoChannelId=2 \"~Luke Smith (Videos)\"
+https://www.youtube.com/feeds/videos.xml?channel_id=UC2eYFnH61tmytImy1mTYvhA \"~Luke Smith (YouTube)\"
+https://lindypress.net/rss
+https://notrelated.xyz/rss
+https://landchad.net/rss.xml
+https://based.cooking/index.xml
+https://artixlinux.org/feed.php \"tech\"
+https://www.archlinux.org/feeds/news/ \"tech\"
+https://github.com/LukeSmithxyz/voidrice/commits/master.atom \"~Spark dotfiles\""
 
 ### FUNCTIONS ###
 
@@ -29,7 +37,7 @@ error() {
 
 welcomemsg() {
 	whiptail --title "Welcome!" \
-		--msgbox "Welcome to Spark Auto-Rice Bootstrapping Script!\\n\\nThis script will automatically install a fully-featured Linux desktop with custom configurations." 10 60
+		--msgbox "Welcome to Luke's Auto-Rice Bootstrapping Script!\\n\\nThis script will automatically install a fully-featured Linux desktop, which I use as my main machine.\\n\\n-Luke" 10 60
 
 	whiptail --title "Important Note!" --yes-button "All ready!" \
 		--no-button "Return..." \
@@ -80,8 +88,22 @@ adduserandpass() {
 }
 
 refreshkeys() {
-	whiptail --infobox "Refreshing Arch Keyring..." 7 40
-	pacman --noconfirm -S archlinux-keyring >/dev/null 2>&1
+	case "$(readlink -f /sbin/init)" in
+	*systemd*)
+		whiptail --infobox "Refreshing Arch Keyring..." 7 40
+		pacman --noconfirm -S archlinux-keyring >/dev/null 2>&1
+		;;
+	*)
+		whiptail --infobox "Enabling Arch Repositories for more a more extensive software collection..." 7 40
+		pacman --noconfirm --needed -S \
+			artix-keyring artix-archlinux-support >/dev/null 2>&1
+		grep -q "^\[extra\]" /etc/pacman.conf ||
+			echo "[extra]
+Include = /etc/pacman.d/mirrorlist-arch" >>/etc/pacman.conf
+		pacman -Sy --noconfirm >/dev/null 2>&1
+		pacman-key --populate archlinux >/dev/null 2>&1
+		;;
+	esac
 }
 
 manualinstall() {
@@ -160,13 +182,13 @@ installationloop() {
 putgitrepo() {
 	# Downloads a gitrepo $1 and places the files in $2 only overwriting conflicts
 	whiptail --infobox "Downloading and installing config files..." 7 60
-	[ -z "$3" ] && branch="main" || branch="$3"
+	[ -z "$3" ] && branch="master" || branch="$repobranch"
 	dir=$(mktemp -d)
 	[ ! -d "$2" ] && mkdir -p "$2"
 	chown "$name":wheel "$dir" "$2"
-	sudo -u "$name" git -C "$dir" clone --depth 1 \
+	sudo -u "$name" git -C "$repodir" clone --depth 1 \
 		--single-branch --no-tags -q --recursive -b "$branch" \
-		--recurse-submodules "$1" "$dir" || error "Failed to clone dotfiles repository. Check the URL, branch, and network connection."
+		--recurse-submodules "$1" "$dir" || error "Failed to clone dotfiles repo. Check branch or URL."
 	sudo -u "$name" cp -rfT "$dir" "$2"
 }
 
@@ -174,10 +196,9 @@ vimplugininstall() {
 	# Installs vim plugins.
 	whiptail --infobox "Installing neovim plugins..." 7 60
 	mkdir -p "/home/$name/.config/nvim/autoload"
-	curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" > "/home/$name/.config/nvim/autoload/plug.vim" || error "Failed to download plug.vim. Check network connection."
-	[ ! -f "/home/$name/.config/nvim/autoload/plug.vim" ] && error "plug.vim file not found after download."
+	curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
 	chown -R "$name":wheel "/home/$name/.config/nvim"
-	sudo -u "$name" nvim --headless -c 'PlugInstall' -c 'qa!' || error "Neovim plugin installation failed."
+	sudo -u "$name" nvim --headless -c "PlugInstall" -c "qa!"
 }
 
 makeuserjs(){
@@ -193,7 +214,7 @@ makeuserjs(){
 
 finalize() {
 	whiptail --title "All done!" \
-		--msgbox "Congrats! Provided there were no hidden errors, the script completed successfully and all the programs and configuration files should be in place.\\n\\nTo run the new graphical environment, log out and log back in as your new user, then run the command \"startx\" to start the graphical environment (it will start automatically in tty1)." 13 80
+		--msgbox "Congrats! Provided there were no hidden errors, the script completed successfully and all the programs and configuration files should be in place.\\n\\nTo run the new graphical environment, log out and log back in as your new user, then run the command \"startx\" to start the graphical environment (it will start automatically in tty1).\\n\\n.t Luke" 13 80
 }
 
 ### THE ACTUAL SCRIPT ###
@@ -238,9 +259,9 @@ adduserandpass || error "Error adding username and/or password."
 
 # Allow user to run sudo without password. Since AUR programs must be installed
 # in a fakeroot environment, this is required for all builds with AUR.
-trap 'rm -f /etc/sudoers.d/spark-temp' HUP INT QUIT TERM PWR EXIT
+trap 'rm -f /etc/sudoers.d/larbs-temp' HUP INT QUIT TERM PWR EXIT
 echo "%wheel ALL=(ALL) NOPASSWD: ALL
-Defaults:%wheel,root runcwd=*" >/etc/sudoers.d/spark-temp
+Defaults:%wheel,root runcwd=*" >/etc/sudoers.d/larbs-temp
 
 # Make pacman colorful, concurrent downloads and Pacman eye-candy.
 grep -q "ILoveCandy" /etc/pacman.conf || sed -i "/#VerbosePkgLists/a ILoveCandy" /etc/pacman.conf
@@ -285,8 +306,12 @@ sudo -u "$name" mkdir -p "/home/$name/.config/mpd/playlists/"
 # Make dash the default #!/bin/sh symlink.
 ln -sfT /bin/dash /bin/sh >/dev/null 2>&1
 
-# dbus UUID must be generated.
+# dbus UUID must be generated for Artix runit.
 dbus-uuidgen >/var/lib/dbus/machine-id
+
+# Use system notifications for Brave on Artix
+# Only do it when systemd is not present
+[ "$(readlink -f /sbin/init)" != "/usr/lib/systemd/systemd" ] && echo "export \$(dbus-launch)" >/etc/profile.d/dbus.sh
 
 # Enable tap to click
 [ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
@@ -318,14 +343,14 @@ pkill -u "$name" librewolf
 
 # Allow wheel users to sudo with password and allow several system commands
 # (like `shutdown` to run without password).
-echo "%wheel ALL=(ALL:ALL) ALL" >/etc/sudoers.d/00-spark-wheel-can-sudo
-echo "%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/shutdown,/usr/bin/reboot,/usr/bin/systemctl suspend,/usr/bin/wifi-menu,/usr/bin/mount,/usr/bin/umount,/usr/bin/pacman -Syu,/usr/bin/pacman -Syyu,/usr/bin/pacman -Syyu --noconfirm,/usr/bin/loadkeys,/usr/bin/pacman -Syyuw --noconfirm,/usr/bin/pacman -S -y --config /etc/pacman.conf --,/usr/bin/pacman -S -y -u --config /etc/pacman.conf --" >/etc/sudoers.d/01-spark-cmds-without-password
-echo "Defaults editor=/usr/bin/nvim" >/etc/sudoers.d/02-spark-visudo-editor
+echo "%wheel ALL=(ALL:ALL) ALL" >/etc/sudoers.d/00-larbs-wheel-can-sudo
+echo "%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/shutdown,/usr/bin/reboot,/usr/bin/systemctl suspend,/usr/bin/wifi-menu,/usr/bin/mount,/usr/bin/umount,/usr/bin/pacman -Syu,/usr/bin/pacman -Syyu,/usr/bin/pacman -Syyu --noconfirm,/usr/bin/loadkeys,/usr/bin/pacman -Syyuw --noconfirm,/usr/bin/pacman -S -y --config /etc/pacman.conf --,/usr/bin/pacman -S -y -u --config /etc/pacman.conf --" >/etc/sudoers.d/01-larbs-cmds-without-password
+echo "Defaults editor=/usr/bin/nvim" >/etc/sudoers.d/02-larbs-visudo-editor
 mkdir -p /etc/sysctl.d
 echo "kernel.dmesg_restrict = 0" > /etc/sysctl.d/dmesg.conf
 
 # Cleanup
-rm -f /etc/sudoers.d/spark-temp
+rm -f /etc/sudoers.d/larbs-temp
 
 # Last message! Install complete!
 finalize
