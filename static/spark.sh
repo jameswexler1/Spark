@@ -6,8 +6,8 @@
 
 ### OPTIONS AND VARIABLES ###
 
-dotfilesrepo="https://github.com/lukesmithxyz/voidrice.git"
-progsfile="https://raw.githubusercontent.com/LukeSmithxyz/Spark/master/static/progs.csv"
+dotfilesrepo="https://github.com/jameswexler1/sparkrice.git"
+progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/progs.csv"
 aurhelper="yay"
 repobranch="master"
 export TERM=ansi
