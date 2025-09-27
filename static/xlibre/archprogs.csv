@@ -1,4 +1,6 @@
 #TAG,NAME IN REPO (or git url),PURPOSE (should be a verb phrase to sound right while installing)
+A,xlibre-xserver-bootstrap,"is a bootstrap package for Xlibre installation."
+A,xlibre-input-libinput,"provides input support for Xlibre."
 A,xlibre-xserver,"is the graphical server (Xlibre fork). This first one may take a while as it pulls many other dependencies first on clean installs."<grok-card data-id="cac852" data-type="citation_card"></grok-card>
 ,xorg-xwininfo,"allows querying information about windows."
 ,xorg-xinit,"starts the graphical server."

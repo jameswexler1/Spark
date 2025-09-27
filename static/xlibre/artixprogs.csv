@@ -1,4 +1,5 @@
 #TAG,NAME IN REPO (or git url),PURPOSE (should be a verb phrase to sound right while installing)
+,xlibre-xf86-input-libinput,"provides input support for Xlibre."
 ,xlibre-xserver,"is the graphical server (Xlibre fork). This first one may take a while as it pulls many other dependencies first on clean installs."<grok-card data-id="df87e2" data-type="citation_card"></grok-card>
 ,xorg-xwininfo,"allows querying information about windows."
 ,xorg-xinit,"starts the graphical server."

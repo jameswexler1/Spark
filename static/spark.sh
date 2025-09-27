@@ -7,7 +7,6 @@
 ### OPTIONS AND VARIABLES ###
 
 dotfilesrepo="https://github.com/jameswexler1/sparkrice.git"
-progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/progs.csv"
 aurhelper="yay"
 repobranch="main"
 export TERM=ansi
@@ -227,6 +226,19 @@ pacman --noconfirm --needed -Sy libnewt ||
 
 # Welcome user and pick dotfiles.
 welcomemsg || error "User exited."
+
+# Prompt for X server choice
+whiptail --title "X Server Selection" --yesno "Do you want to use Xorg (default) or Xlibre (fork)?" 10 60 --yes-button "Xorg" --no-button "Xlibre"
+if [ $? -eq 0 ]; then
+    progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/progs.csv"
+else
+    # Detect if Arch (systemd) or Artix (non-systemd)
+    if [ "$(readlink -f /sbin/init)" = "/usr/lib/systemd/systemd" ]; then
+        progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/xlibre/archprogs.csv"
+    else
+        progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/xlibre/artixprogs.csv"
+    fi
+fi
 
 # Get and verify username and password.
 getuserandpass || error "User exited."
