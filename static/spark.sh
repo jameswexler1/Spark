@@ -24,7 +24,7 @@ https://github.com/LukeSmithxyz/voidrice/commits/master.atom \"~Spark dotfiles\"
 ### FUNCTIONS ###
 
 installpkg() {
-	pacman --noconfirm --needed -S "$1" >/dev/null 2>&1
+	pacman --noconfirm --needed -S "$1" || error "Failed to install $1"
 }
 
 error() {
@@ -35,7 +35,7 @@ error() {
 
 welcomemsg() {
 	whiptail --title "Welcome!" \
-		--msgbox "Welcome to Sparkk's Auto-Rice Bootstrapping Script!\\n\\nThis script will automatically install a fully-featured Linux desktop, which I use as my main machine.\\n\\n-Spark" 10 60
+		--msgbox "Welcome to Spark's Auto-Rice Bootstrapping Script!\\n\\nThis script will automatically install a fully-featured Linux desktop, which I use as my main machine.\\n\\n-Spark" 10 60
 
 	whiptail --title "Important Note!" --yes-button "All ready!" \
 		--no-button "Return..." \
@@ -102,6 +102,24 @@ Include = /etc/pacman.d/mirrorlist-arch" >>/etc/pacman.conf
 		pacman-key --populate archlinux >/dev/null 2>&1
 		;;
 	esac
+}
+
+enable_gremlins() {
+	whiptail --title "Enabling Testing Repos" --yesno "To install XLibre on Artix, we need to enable the testing repositories (gremlins). This may introduce instability as it pulls from testing branches. Continue?" 10 60 || error "User aborted XLibre installation."
+	whiptail --title "System Upgrade Warning" --yesno "Enabling gremlins requires a full system upgrade to align packages with testing versions. This will upgrade ALL installed packages to their gremlins equivalents where available and may cause temporary instability. Proceed?" 10 60 || error "User aborted system upgrade."
+	whiptail --infobox "Enabling and prioritizing gremlins repositories..." 7 50
+	for repo in system world galaxy; do
+		gremlins_repo="${repo}-gremlins"
+		if ! grep -q "^\[$gremlins_repo\]" /etc/pacman.conf; then
+			sed -i "/^\[$repo\]/i [$gremlins_repo]\nInclude = /etc/pacman.d/mirrorlist\n" /etc/pacman.conf
+		fi
+	done
+	pacman -Syy --noconfirm || error "Failed to sync repositories after enabling gremlins."
+	if pacman -Q xorg-server >/dev/null 2>&1; then
+		whiptail --infobox "Removing existing Xorg to resolve conflicts with XLibre..." 7 50
+		pacman -Rns --noconfirm xorg-server || true
+	fi
+	pacman -Syu --noconfirm || error "Failed to upgrade system after enabling gremlins."
 }
 
 manualinstall() {
@@ -238,6 +256,7 @@ else
         progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/xlibre/archprogs.csv"
     else
         progsfile="https://raw.githubusercontent.com/jameswexler1/Spark/master/static/xlibre/artixprogs.csv"
+        enable_gremlins
     fi
 fi
 
